@@ -47,23 +47,30 @@ export class AppController {
     const chunkDir = `uploads/chunkDir_${name.split('.')[0]}`;
     console.log(chunkDir);
     const files = fs.readdirSync(chunkDir);
+
+    let count = 0;
     let start = 0;
     files.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    const promises = files.map((file) => {
-      return new Promise<void>((resolve) => {
-        const filePath = chunkDir + '/' + file;
-        const stream = fs.createReadStream(filePath);
-        stream
-          .pipe(fs.createWriteStream('uploads/' + name, { start }))
-          .on('finish', () => {
-            start += fs.statSync(filePath).size;
-            resolve();
-          });
-      });
-    });
+    files.map((file) => {
+      const filePath = chunkDir + '/' + file;
+      const stream = fs.createReadStream(filePath);
+      stream
+        .pipe(fs.createWriteStream('uploads/' + name, { start }))
+        .on('finish', () => {
+          count++;
+          if (count === files.length) {
+            stream.close();
+            fs.rm(
+              chunkDir,
+              {
+                recursive: true,
+              },
+              () => {},
+            );
+          }
+        });
 
-    Promise.all(promises).then(() => {
-      fs.rm(chunkDir, { recursive: true }, () => {});
+      start += fs.statSync(filePath).size;
     });
   }
 
