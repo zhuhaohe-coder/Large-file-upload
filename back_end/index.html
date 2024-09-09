@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://unpkg.com/axios@0.24.0/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <input id="fileInput" type="file" />
+    <img src="https://testzhh.oss-cn-beijing.aliyuncs.com/da-xz.jpg?Expires=1724220898&OSSAccessKeyId=TMP.3KePWjFRVwQm33B2rcgTRknKgwJLkZg7Qn3QrdcaKMUjML5YBBYSMdivZXBvf98sfiRVn1EqENdWfjqf3Nk44KovJdYUbZ&Signature=NWAZbi%2FET8TUmmVsJNSzfUcQiSs%3D" alt="">
+    <script>
+      const fileInput = document.querySelector('#fileInput');
+      const chunkSize = 500 * 1024;
+
+      fileInput.onchange = async function () {
+        const file = fileInput.files[0];
+        const formData = new FormData();
+
+        const chunks = [];
+        let start = 0;
+        while (start < file.size) {
+          chunks.push(file.slice(start, start + chunkSize));
+          start += chunkSize;
+        }
+
+        const randomStr = Math.random().toString().slice(2, 8);
+
+        const tasks = chunks.map((chunk, index) => {
+          const formData = new FormData();
+          formData.set('name', `${randomStr}_${file.name}-${index}`);
+          formData.set('files', chunk);
+
+          return axios.post('http://localhost:3000/upload', formData);
+        });
+
+        await Promise.all(tasks);
+        axios.get(`http://localhost:3000/merge?name=${randomStr}_${file.name}`);
+      };
+    </script>
+  </body>
+</html>
